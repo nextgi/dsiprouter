@@ -13,6 +13,7 @@
 # - Amazon Linux 2
 # - Ubuntu 16.04 (xenial)
 # - Ubuntu 18.04 (bionic)
+# - Ubuntu 20.04 (focal)
 #
 # Conventions:
 # - In general exported variables & functions are used in externally called scripts / programs
@@ -303,9 +304,14 @@ function validateOSInfo {
         esac
     elif [[ "$DISTRO" == "ubuntu" ]]; then
         case "$DISTRO_VER" in
-            16.04|18.04)
+            16.04)
                 if [[ -z "$KAM_VERSION" ]]; then
                     KAM_VERSION=51
+                fi
+                ;;
+            18.04|20.04)
+                if [[ -z "$KAM_VERSION" ]]; then
+                    KAM_VERSION=53
                 fi
                 ;;
             *)
@@ -1207,7 +1213,8 @@ function installKamailio {
                 -e "DROP DATABASE kamailio;"
         fi
     fi
-
+	# TODO: Confirm this is an acceptable workaround
+    chmod +x ./kamailio/${DISTRO}/${DISTRO_VER}.sh
     ./kamailio/${DISTRO}/${DISTRO_VER}.sh install ${KAM_VERSION} ${DSIP_PORT}
     if [ $? -eq 0 ]; then
         if [ ${WITH_SSL} -eq 1 ]; then
@@ -1327,6 +1334,9 @@ installSipsak() {
     if [ $ret -eq 0 ]; then
         pprint "SipSak was installed"
         touch ${DSIP_SYSTEM_CONFIG_DIR}/.sipsakinstalled
+		# Added here as something happens with DNS
+		# TODO: Investigate what is happening with DNS resolve
+		echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf > /dev/null
     else
         printerr "SipSak install failed.. continuing without it"
     fi
