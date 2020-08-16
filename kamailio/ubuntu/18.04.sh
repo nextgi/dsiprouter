@@ -13,15 +13,13 @@ function install {
     rm -f /etc/passwd.lock /etc/shadow.lock /etc/group.lock /etc/gshadow.lock
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
-
-    grep -ioP '.*deb.kamailio.org/kamailio[0-9]* bionic.*' /etc/apt/sources.list.d/kamailio.list > /dev/null
-    # If repo is not installed
-    if [ $? -eq 1 ]; then
-       echo -e "\n# kamailio repo's" >> /etc/apt/sources.list.d/kamailio.list
-       echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" >> /etc/apt/sources.list.d/kamailio.list
-       echo "deb     http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> /etc/apt/sources.list.d/kamailio.list
-       echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> /etc/apt/sources.list.d/kamailio.list
-    fi
+	
+    printwarn "Installing Kam Ver ${KAM_VERSION}"
+    rm /etc/apt/sources.list.d/kamailio.list
+    echo -e "\n# kamailio repo's" >> /etc/apt/sources.list.d/kamailio.list
+    echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" >> /etc/apt/sources.list.d/kamailio.list
+    echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> /etc/apt/sources.list.d/kamailio.list
+    echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> /etc/apt/sources.list.d/kamailio.list
 
     # Add Key for Kamailio Repo
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
