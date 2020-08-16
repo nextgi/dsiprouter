@@ -22,36 +22,10 @@ function install {
     apt-get install -y libavfilter-dev
     apt-get install -y libavformat-dev
     apt-get install -y libmysqlclient-dev
-    apt-get install -y libmariadbclient-dev
+#    apt-get install -y libmariadbclient-dev
     apt-get install -y default-libmysqlclient-dev
     apt-get install -y module-assistant
     apt-get install -y dkms
-
-    # try upgrading debhelper with backports if lower ver than 10
-    CURRENT_VERSION=$(dpkg -s debhelper 2>/dev/null | grep Version | sed -rn 's|[^0-9\.]*([0-9]).*|\1|mp')
-    if (( ${CURRENT_VERSION:-0} < 10 )); then
-        CODENAME=$(cat /etc/os-release | grep '^VERSION_CODENAME=' | cut -d '=' -f 2)
-        BACKPORT_REPO="${CODENAME}-backports"
-        apt-get install -y -t ${BACKPORT_REPO} debhelper
-
-        # if current backports fail (again aws repo's are not very reliable) try and older repo
-        if [ $? -ne 0 ]; then
-            printf '%s\n%s\n' \
-                "deb http://archive.ubuntu.com/debian-archive/ubuntu/ ${CODENAME}-backports main" \
-                "deb-src http://archive.debian.org/debian-archive/ubuntu/ ${CODENAME}-backports main" \
-                > /etc/apt/sources.list.d/tmp-backports.list
-            apt-get -o Acquire::Check-Valid-Until=false update -y
-
-            apt-get -o Acquire::Check-Valid-Until=false install -y -t ${BACKPORT_REPO} debhelper
-            rm -f /etc/apt/sources.list.d/tmp-backports.list
-        fi
-
-        # pin debhelper package to stay on backports repo
-        printf '%s\n%s\n%s\n' \
-            "Package: debhelper" \
-            "Pin: release n=${BACKPORT_REPO}" \
-            "Pin-Priority: 750" > /etc/apt/preferences.d/debhelper
-    fi
 
     # create rtpengine user and group
     # sometimes locks aren't properly removed (this seems to happen often on VM's)
