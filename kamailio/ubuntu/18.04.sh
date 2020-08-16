@@ -3,6 +3,8 @@
 (( $DEBUG == 1 )) && set -x
 
 function install {
+    local KAM_SOURCES_LIST="/etc/apt/sources.list.d/kamailio.list"
+	
     # Install Dependencies
     apt-get install -y curl wget sed gawk vim perl
     apt-get install -y logrotate rsyslog
@@ -15,11 +17,11 @@ function install {
     chown -R kamailio:kamailio /var/run/kamailio
 	
     printwarn "Installing Kam Ver ${KAM_VERSION}"
-    rm /etc/apt/sources.list.d/kamailio.list
-    echo -e "\n# kamailio repo's" >> /etc/apt/sources.list.d/kamailio.list
-    echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" >> /etc/apt/sources.list.d/kamailio.list
-    echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> /etc/apt/sources.list.d/kamailio.list
-    echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> /etc/apt/sources.list.d/kamailio.list
+    rm ${KAM_SOURCES_LIST}
+    echo -e "\n# kamailio repo's" >> ${KAM_SOURCES_LIST}
+    echo "deb http://cz.archive.ubuntu.com/ubuntu bionic main" >> ${KAM_SOURCES_LIST}
+    echo "deb http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> ${KAM_SOURCES_LIST}
+    echo "deb-src http://deb.kamailio.org/kamailio${KAM_VERSION} bionic main" >> ${KAM_SOURCES_LIST}
 
     # Add Key for Kamailio Repo
     wget -O- http://deb.kamailio.org/kamailiodebkey.gpg | apt-key add -
@@ -29,7 +31,7 @@ function install {
 
     # Install Kamailio packages
 	# Added kamailio-tls-modules
-    apt-get install -y --allow-unauthenticated firewalld kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules kamailio-tls-modules
+    apt-get install -y --allow-unauthenticated firewalld certbot kamailio kamailio-mysql-modules mysql-server kamailio-extra-modules kamailio-tls-modules kamailio-websocket-modules
 
     # alias mariadb.service to mysql.service and mysqld.service as in debian repo
     # allowing us to use same service name (mysql, mysqld, or mariadb) across platforms
@@ -138,16 +140,16 @@ EOF
     firewall-cmd --reload
 
     # Make sure MariaDB and Local DNS start before Kamailio
-    if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
-        sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
-    fi
-    if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
-        sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
-    fi
-    systemctl daemon-reload
+    # if grep -v 'mysql.service dnsmasq.service' /lib/systemd/system/kamailio.service; then
+    #     sed -i -r -e 's/(After=.*)/\1 mysql.service dnsmasq.service/' /lib/systemd/system/kamailio.service
+    # fi
+    # if grep -v "${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig" /lib/systemd/system/kamailio.service; then
+    #     sed -i -r -e "0,\|^ExecStart.*|{s||ExecStartPre=-${DSIP_PROJECT_DIR}/dsiprouter.sh updatednsconfig\n&|}" /lib/systemd/system/kamailio.service
+    # fi
+    # systemctl daemon-reload
 
     # Enable Kamailio for system startup
-    systemctl enable kamailio
+    # systemctl enable kamailio
 
     # Configure rsyslog defaults
     if ! grep -q 'dSIPRouter rsyslog.conf' /etc/rsyslog.conf 2>/dev/null; then
@@ -161,6 +163,18 @@ EOF
 
     # Setup logrotate
     cp -f ${DSIP_PROJECT_DIR}/resources/logrotate/kamailio /etc/logrotate.d/kamailio
+	
+	# Setup Kamailio to use the CA cert's that are shipped with the OS
+    mkdir -p ${DSIP_SYSTEM_CONFIG_DIR}/certs
+    cp ${DSIP_PROJECT_DIR}/kamailio/cacert_dsiprouter.pem ${DSIP_SYSTEM_CONFIG_DIR}/certs/cacert.pem
+
+    # Setup dSIPRouter Module
+    KAM_VERSION=$(kamailio -V | head -1 | awk '{print $3}' | sed  's/\.//g')
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter_${KAM_VERSION}.so /usr/lib/x86_64-linux-gnu/kamailio/modules/dsiprouter.so
+    if [ $? -gt 0 ]; then
+        echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}"
+        return 1
+    fi
 
     return 0
 }
