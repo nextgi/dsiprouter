@@ -170,7 +170,7 @@ EOF
 
     # Setup dSIPRouter Module
     KAM_VERSION=$(kamailio -V | head -1 | awk '{print $3}' | sed  's/\.//g')
-    cp -f ${DSIP_PROJECT_DIR}/kamailio/debian/modules/dsiprouter_${KAM_VERSION}.so /usr/lib/x86_64-linux-gnu/kamailio/modules/dsiprouter.so
+    cp -f ${DSIP_PROJECT_DIR}/kamailio/ubuntu/modules/dsiprouter_${KAM_VERSION}.so /usr/lib/x86_64-linux-gnu/kamailio/modules/dsiprouter.so
     if [ $? -gt 0 ]; then
         echo "No dSIPRouter module for Kamailio version ${KAM_VERSION}"
         return 1
