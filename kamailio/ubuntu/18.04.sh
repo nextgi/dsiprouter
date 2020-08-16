@@ -14,7 +14,7 @@ function install {
     useradd --system --user-group --shell /bin/false --comment "Kamailio SIP Proxy" kamailio
     chown -R kamailio:kamailio /var/run/kamailio
 
-	grep -ioP '.*deb.kamailio.org/kamailio[0-9]* bionic.*' /etc/apt/sources.list.d/kamailio.list > /dev/null
+    grep -ioP '.*deb.kamailio.org/kamailio[0-9]* bionic.*' /etc/apt/sources.list.d/kamailio.list > /dev/null
     # If repo is not installed
     if [ $? -eq 1 ]; then
        echo -e "\n# kamailio repo's" >> /etc/apt/sources.list.d/kamailio.list

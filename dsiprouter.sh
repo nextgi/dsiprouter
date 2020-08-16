@@ -12,6 +12,7 @@
 # - CentOS 7
 # - Amazon Linux 2
 # - Ubuntu 16.04 (xenial)
+# - Ubuntu 18.04 (bionic)
 #
 # Conventions:
 # - In general exported variables & functions are used in externally called scripts / programs
@@ -302,7 +303,7 @@ function validateOSInfo {
         esac
     elif [[ "$DISTRO" == "ubuntu" ]]; then
         case "$DISTRO_VER" in
-            16.04)
+            16.04|18.04)
                 if [[ -z "$KAM_VERSION" ]]; then
                     KAM_VERSION=51
                 fi
