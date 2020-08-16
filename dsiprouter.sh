@@ -133,6 +133,7 @@ setScriptSettings() {
     export EXTERNAL_IP=$(getExternalIP)
     export EXTERNAL_FQDN=$(dig @8.8.8.8 +short -x ${EXTERNAL_IP} | sed 's/\.$//')
     [[ ! -n "$EXTERNAL_FQDN" ]] && export EXTERNAL_FQDN="$EXTERNAL_IP"
+	[[ "$EXTERNAL_FQDN" == *arpa ]] && export EXTERNAL_FQDN="$EXTERNAL_IP"
     export INTERNAL_IP=$(ip route get 8.8.8.8 | awk 'NR == 1 {print $7}')
     export INTERNAL_NET=$(awk -F"." '{print $1"."$2"."$3".*"}' <<<$INTERNAL_IP)
     export INTERNAL_FQDN="$(hostname -f)"
@@ -313,6 +314,7 @@ function validateOSInfo {
                 if [[ -z "$KAM_VERSION" ]]; then
                     KAM_VERSION=53
                 fi
+			    printwarn "Installing Kam for Ubuntu 18.04 & 20.04. Using Kam Version ${KAM_VERSION}"
                 ;;
             *)
                 printerr "Your Operating System Version is not supported yet. Please open an issue at https://github.com/dOpensource/dsiprouter/"
@@ -2424,6 +2426,16 @@ function processCMD {
                         else
                             shift
                             export EXTERNAL_IP="$1"
+                            shift
+                        fi
+                        ;;
+                    -hostname=*)
+                        if echo "$1" | grep -q '=' 2>/dev/null; then
+                            export EXTERNAL_FQDN=$(echo "$1" | cut -d '=' -f 2)
+                            shift
+                        else
+                            shift
+                            export EXTERNAL_FQDN="$1"
                             shift
                         fi
                         ;;
